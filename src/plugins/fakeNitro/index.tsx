@@ -176,10 +176,13 @@ const settings = definePluginSettings({
         description: "Hide sticker name from url",
         type: OptionType.BOOLEAN,
         default: false
+    },
+    disableEmbedPermissionCheck: {
+        description: "Whether to disable the embed permission check when sending fake emojis and stickers",
+        type: OptionType.BOOLEAN,
+        default: false
     }
-}).withPrivateSettings<{
-    disableEmbedPermissionCheck: boolean;
-}>();
+});
 
 function hasPermission(channelId: string, permission: bigint) {
     const channel = ChannelStore.getChannel(channelId);
@@ -406,6 +409,14 @@ export default definePlugin({
             replacement: {
                 match: /(?<=type:"(?:SOUNDBOARD_SOUNDS_RECEIVED|GUILD_SOUNDBOARD_SOUND_CREATE|GUILD_SOUNDBOARD_SOUND_UPDATE|GUILD_SOUNDBOARD_SOUNDS_UPDATE)".+?available:)\i\.available/g,
                 replace: "true"
+            }
+        },
+        // Allow using custom notification sounds
+        {
+            find: "canUseCustomNotificationSounds:function",
+            replacement: {
+                match: /canUseCustomNotificationSounds:function\(\i\){/,
+                replace: "$&return true;"
             }
         }
     ],
