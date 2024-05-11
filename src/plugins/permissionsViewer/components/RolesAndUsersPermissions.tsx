@@ -249,13 +249,13 @@ function RoleContextMenu({ guild, roleId, onClose }: { guild: Guild; roleId: str
         >
             <Menu.MenuItem
                 id="vc-copy-role-id"
-                label="Copy Id"
+                label={i18n.Messages.COPY_ID_ROLE}
                 action={() => {
                     Clipboard.copy(roleId);
                 }}
             />
 
-            {false && (
+            {(settings.store as any).unsafeViewAsRole && (
                 <Menu.MenuItem
                     id="vc-pw-view-as-role"
                     label="View As Role"
@@ -292,7 +292,7 @@ function UserContextMenu({ userId, onClose }: { userId: string; onClose: () => v
         >
             <Menu.MenuItem
                 id="vc-copy-user-id"
-                label="Copy Id"
+                label={i18n.Messages.COPY_ID_USER}
                 action={() => {
                     Clipboard.copy(userId);
                 }}
