@@ -22,7 +22,7 @@ import { InfoIcon, OwnerCrownIcon } from "@components/Icons";
 import { getUniqueUsername } from "@utils/discord";
 import { classes } from "@utils/misc";
 import { ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
-import { Clipboard, ContextMenuApi, FluxDispatcher, Fragment, GuildMemberStore, GuildStore, Menu, PermissionsBits, ScrollerThin, Switch, Text, Tooltip, useEffect, UserStore, useState, useStateFromStores } from "@webpack/common";
+import { Clipboard, ContextMenuApi, FluxDispatcher, Fragment, GuildMemberStore, GuildStore, i18n, Menu, PermissionsBits, ScrollerThin, Switch, Text, Tooltip, useEffect, UserStore, useState, useStateFromStores } from "@webpack/common";
 import type { Guild } from "discord-types/general";
 
 import { settings } from "..";
@@ -249,16 +249,16 @@ function RoleContextMenu({ guild, roleId, onClose }: { guild: Guild; roleId: str
         >
             <Menu.MenuItem
                 id="vc-copy-role-id"
-                label="Copy Id"
+                label={i18n.Messages.COPY_ID_ROLE}
                 action={() => {
                     Clipboard.copy(roleId);
                 }}
             />
 
-            {false && (
+            {(settings.store as any).unsafeViewAsRole && (
                 <Menu.MenuItem
                     id="vc-pw-view-as-role"
-                    label="View As Role"
+                    label={i18n.Messages.VIEW_AS_ROLE}
                     action={() => {
                         const role = GuildStore.getRole(guild.id, roleId);
                         if (!role) return;
@@ -292,7 +292,7 @@ function UserContextMenu({ userId, onClose }: { userId: string; onClose: () => v
         >
             <Menu.MenuItem
                 id="vc-copy-user-id"
-                label="Copy Id"
+                label={i18n.Messages.COPY_ID_USER}
                 action={() => {
                     Clipboard.copy(userId);
                 }}
