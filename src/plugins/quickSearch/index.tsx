@@ -9,7 +9,7 @@ import { Devs } from "@utils/constants";
 import { getCurrentChannel } from "@utils/discord";
 import definePlugin from "@utils/types";
 import { filters, findAll, findByPropsLazy } from "@webpack";
-import { ChannelStore, FluxDispatcher, Menu, PermissionsBits, PermissionStore, React, UserStore, useState } from "@webpack/common";
+import { ChannelStore, FluxDispatcher, i18n, Menu, PermissionsBits, PermissionStore, React, UserStore, useState } from "@webpack/common";
 
 const EDITOR_STATE_STORE = findByPropsLazy("createEmptyEditorState");
 const DECORATORS = findByPropsLazy("generateDecorators");
@@ -51,10 +51,12 @@ const contextMenuPath: NavContextMenuPatchCallback = (children, props) => {
     if (props?.channel && !PermissionStore.can(PermissionsBits.VIEW_CHANNEL, props?.channel)) return;
 
     const channelId = props?.message?.channel_id || (props?.channel?.id);
+    const channelName = props?.channel?.name;
     const currentChannelId = getCurrentChannel()?.guild_id;
     const searchId = props?.guild?.id || currentChannelId || channelId;
     if (!searchId) return;
     const userId = props?.message?.author?.id || props?.user?.id;
+    const userNick = props?.messaag?.author?.username || props?.user?.username;
     const content = props?.message?.content;
     const [queryObject, setQueryObject] = useState({});
     const onCheckboxChange = (name: string) => {
@@ -64,28 +66,28 @@ const contextMenuPath: NavContextMenuPatchCallback = (children, props) => {
     const ELEM_INFO = [
         {
             name: "quick-search-channel",
-            label: "Search within channel",
+            label: `${i18n.Messages.SEARCH_FILTER_IN} ${channelName}`,
             present: !!channelId,
             value: channelId,
             queryName: "channel_id",
         },
         {
             name: "quick-search-author",
-            label: "Search from user",
+            label: `${i18n.Messages.SEARCH_FILTER_FROM} ${userNick}`,
             present: !!userId,
             value: userId,
             queryName: "author_id",
         },
         {
             name: "quick-search-mentions",
-            label: "Search mentioning user",
+            label: `${i18n.Messages.SEARCH_FILTER_MENTIONS} ${userNick}`,
             present: !!userId,
             value: [userId],
             queryName: "mentions",
         },
         {
             name: "quick-search-content",
-            label: "Search message content",
+            label: `${i18n.Messages.COPY_TEXT.split().pop()}`,
             present: !!content,
             value: content ?? "",
             queryName: "content",
@@ -112,7 +114,7 @@ const contextMenuPath: NavContextMenuPatchCallback = (children, props) => {
 
                 <Menu.MenuItem
                     id="quick-search-start"
-                    label="Search"
+                    label={i18n.Messages.SEARCH}
                     disabled={!Object.values(queryObject).some(Boolean)}
                     action={() => {
                         const nonTokens = findAll(filters.byProps("NON_TOKEN_TYPE"));
