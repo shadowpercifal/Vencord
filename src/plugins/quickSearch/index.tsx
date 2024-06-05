@@ -56,7 +56,7 @@ const contextMenuPath: NavContextMenuPatchCallback = (children, props) => {
     const searchId = props?.guild?.id || currentChannelId || channelId;
     if (!searchId) return;
     const userId = props?.message?.author?.id || props?.user?.id;
-    const userNick = props?.messaag?.author?.username || props?.user?.username;
+    const userNick = props?.message?.author?.username || props?.user?.username;
     const content = props?.message?.content;
     const [queryObject, setQueryObject] = useState({});
     const onCheckboxChange = (name: string) => {
@@ -66,28 +66,28 @@ const contextMenuPath: NavContextMenuPatchCallback = (children, props) => {
     const ELEM_INFO = [
         {
             name: "quick-search-channel",
-            label: `${i18n.Messages.SEARCH_FILTER_IN} ${channelName}`,
+            label: `${i18n.Messages.SEARCH_FILTER_IN}: ${channelName}`,
             present: !!channelId,
             value: channelId,
             queryName: "channel_id",
         },
         {
             name: "quick-search-author",
-            label: `${i18n.Messages.SEARCH_FILTER_FROM} ${userNick}`,
+            label: `${i18n.Messages.SEARCH_FILTER_FROM}: ${userNick}`,
             present: !!userId,
             value: userId,
             queryName: "author_id",
         },
         {
             name: "quick-search-mentions",
-            label: `${i18n.Messages.SEARCH_FILTER_MENTIONS} ${userNick}`,
+            label: `${i18n.Messages.SEARCH_FILTER_MENTIONS}: ${userNick}`,
             present: !!userId,
             value: [userId],
             queryName: "mentions",
         },
         {
             name: "quick-search-content",
-            label: `${i18n.Messages.COPY_TEXT.split().pop()}`,
+            label: `${i18n.Messages.COMMAND_GIPHY_DESCRIPTION.split(" ").shift()}: ${i18n.Messages.COPY_TEXT.split(" ").pop()}`,
             present: !!content,
             value: content ?? "",
             queryName: "content",
