@@ -343,7 +343,7 @@ export default definePlugin({
             ]
         },
         {
-            find: "renderEmbeds(",
+            find: "}renderEmbeds(",
             replacement: [
                 {
                     // Call our function to decide whether the embed should be ignored or not
@@ -354,8 +354,8 @@ export default definePlugin({
                 {
                     // Patch the stickers array to add fake nitro stickers
                     predicate: () => settings.store.transformStickers,
-                    match: /(?<=renderStickersAccessories\((\i)\){let (\i)=\(0,\i\.\i\)\(\i\).+?;)/,
-                    replace: (_, message, stickers) => `${stickers}=$self.patchFakeNitroStickers(${stickers},${message});`
+                    match: /renderStickersAccessories\((\i)\){let (\i)=\(0,\i\.\i\)\(\i\).+?;/,
+                    replace: (m, message, stickers) => `${m}${stickers}=$self.patchFakeNitroStickers(${stickers},${message});`
                 },
                 {
                     // Filter attachments to remove fake nitro stickers or emojis
@@ -823,7 +823,7 @@ export default definePlugin({
     },
 
     canUseEmote(e: Emoji, channelId: string) {
-        if (e.type === "UNICODE") return true;
+        if (e.type === 0) return true;
         if (e.available === false) return false;
 
         const isUnusableRoleSubEmoji = RoleSubscriptionEmojiUtils.isUnusableRoleSubscriptionEmojiOriginal ?? RoleSubscriptionEmojiUtils.isUnusableRoleSubscriptionEmoji;
