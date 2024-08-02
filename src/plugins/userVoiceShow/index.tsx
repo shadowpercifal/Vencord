@@ -24,7 +24,7 @@ import { findStoreLazy } from "@webpack";
 import { ChannelStore, GuildStore, UserStore } from "@webpack/common";
 import { User } from "discord-types/general";
 
-import { VoiceChannelIdSection } from "./components/VoiceChannelIdSection";
+import VoiceActivityIcon from "./components/VoiceActivityIcon";
 import { VoiceChannelSection } from "./components/VoiceChannelSection";
 
 const VoiceStateStore = findStoreLazy("VoiceStateStore");
@@ -40,6 +40,18 @@ export const settings = definePluginSettings({
         description: 'Whether to show "IN A VOICE CHANNEL" above the join button',
         default: true,
     },
+    showVoiceActivityIcons: {
+        type: OptionType.BOOLEAN,
+        description: "Show a user's voice activity in dm list and member list",
+        default: true,
+        restartNeeded: true,
+    },
+    showUsersInVoiceActivity: {
+        type: OptionType.BOOLEAN,
+        description: "Whether to show a list of users connected to a channel",
+        default: true,
+        disabled: () => !settings.store.showVoiceActivityIcons
+    },
 });
 
 interface UserProps {
@@ -51,12 +63,7 @@ const VoiceChannelField = ErrorBoundary.wrap(({ user }: UserProps) => {
     if (!channelId) return null;
 
     const channel = ChannelStore.getChannel(channelId);
-    if (!channel) return (
-        <VoiceChannelIdSection
-            channelId={channelId}
-            showHeader={settings.store.showVoiceChannelSectionHeader}
-        />
-    );
+    if (!channel) return null;
 
     const guild = GuildStore.getGuild(channel.guild_id);
 
@@ -99,15 +106,6 @@ export default definePlugin({
         );
     }, { noop: true }),
 
-    patchProfilePanel: ErrorBoundary.wrap(({ id }: { id: string; }) => {
-        const user = UserStore.getUser(id);
-        return (
-            <div className={""}>
-                <VoiceChannelField user={user} />
-            </div>
-        );
-    }, { noop: true }),
-
     patchPrivateChannelProfile: ErrorBoundary.wrap(({ user }: UserProps) => {
         if (!user) return null;
 
@@ -115,6 +113,17 @@ export default definePlugin({
             <VoiceChannelField user={user} />
         </div>;
     }, { noop: true }),
+
+    patchUserList: ({ user }: UserProps, dmList: boolean) => {
+        if (!settings.store.showVoiceActivityIcons) return null;
+
+        return (
+            <ErrorBoundary noop>
+                <VoiceActivityIcon user={user} dmChannel={dmList} />
+            </ErrorBoundary>
+
+        );
+    },
 
     patches: [
         // User Profile Modal - below user info
@@ -135,14 +144,6 @@ export default definePlugin({
                 replace: "$&$self.patchModal(arguments[0]),",
             }
         },
-        {
-            find: "\"Profile Panel: user cannot be undefined\"",
-            replacement: {
-                // createElement(Divider, {}), createElement(NoteComponent)
-                match: /\(0,\i\.jsx\)\(\i\.\i,\{\}\).{0,100}setNote:(?=.+?channelId:(\i).id)/,
-                replace: "$self.patchProfilePanel({ id: $1.recipients[0] }),$&"
-            }
-        },
 
         // Private Channel Profile - above Activities
         {
@@ -150,6 +151,24 @@ export default definePlugin({
             replacement: {
                 match: /user:(\i){1,2}.+?voiceGuild,voiceChannel.+?:null,/,
                 replace: "$&$self.patchPrivateChannelProfile({user:$1}),"
+            }
+        },
+
+        // Member List User
+        {
+            find: ".MEMBER_LIST_ITEM_AVATAR_DECORATION_PADDING)",
+            replacement: {
+                match: /avatar:(\i){1,2}/,
+                replace: "children:[$self.patchUserList(arguments[0], false)],$&",
+            }
+        },
+
+        // Dm List User
+        {
+            find: "PrivateChannel.renderAvatar",
+            replacement: {
+                match: /highlighted:.+?name:.+?decorators.+?\}\)\}\),/,
+                replace: "$&$self.patchUserList(arguments[0], true),",
             }
         }
     ],
