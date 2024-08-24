@@ -486,8 +486,8 @@ export const Devs = /* #__PURE__*/ Object.freeze({
         name: "Oleh Polisan",
         id: 242305263313485825n
     },
-    CatGirlDShadow: {
-        name: "CatGirlDShadow",
+    ShadowPercifal: {
+        name: "shadowpercifal",
         id: 428611824783458331n
     },
     HAHALOSAH: {

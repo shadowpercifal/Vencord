@@ -82,7 +82,7 @@ const VoiceChannelField = ErrorBoundary.wrap(({ user }: UserProps) => {
 export default definePlugin({
     name: "UserVoiceShow",
     description: "Shows whether a User is currently in a voice channel somewhere in their profile",
-    authors: [Devs.LordElias, Devs.Johannes7k75],
+    authors: [Devs.LordElias, Devs.ShadowPercifal],
     tags: ["voice", "activity"],
     settings,
 
@@ -97,7 +97,7 @@ export default definePlugin({
         );
     }, { noop: true }),
 
-    patchPopout: ErrorBoundary.wrap(({ user }: UserProps) => {
+    patchProfilePopout: ErrorBoundary.wrap(({ user }: UserProps) => {
         const isSelfUser = user.id === UserStore.getCurrentUser().id;
         return (
             <div className={isSelfUser ? "vc-uvs-popout-margin-self" : ""}>
