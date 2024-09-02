@@ -23,11 +23,13 @@ import { getUniqueUsername } from "@utils/discord";
 import { classes } from "@utils/misc";
 import { ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
 import { Clipboard, ContextMenuApi, FluxDispatcher, Fragment, GuildMemberStore, GuildStore, i18n, Menu, PermissionsBits, ScrollerThin, Switch, Text, Tooltip, useEffect, UserStore, useState, useStateFromStores } from "@webpack/common";
-import type { Guild } from "discord-types/general";
+import { findByCodeLazy } from "@webpack";
+import { UnicodeEmoji } from "@webpack/types";
+import type { Guild, Role, User } from "discord-types/general";
 
 import { settings } from "..";
-import { cl, getComputedPermissionValue, getOverwriteValue, getPermissionDescription, getPermissionString as getPermissionTitle, getPermissionValue, isOverwriteValueRelevant, isPermissionValueRelevant } from "../utils";
-import { PermissionIcon } from "./icons";
+import { cl, getComputedPermissionValue, getOverwriteValue, getPermissionDescription, getPermissionString, getPermissionString as getPermissionTitle, getPermissionValue, isOverwriteValueRelevant, isPermissionValueRelevant } from "../utils";
+import { PermissionAllowedIcon, PermissionDeniedIcon, PermissionIcon } from "./icons";
 
 export const enum PermissionType {
     Role = 0,
@@ -49,15 +51,15 @@ export interface RoleOrUserPermission {
     overwriteDeny?: bigint;
 }
 
-function openRolesAndUsersPermissionsModal(permissions: Array<RoleOrUserPermission>, guild: Guild, header: string) {
-    return openModal(modalProps => (
-        <RolesAndUsersPermissions
-            modalProps={modalProps}
-            permissions={permissions}
-            guild={guild}
-            header={header}
-        />
-    ));
+type GetRoleIconData = (role: Role, size: number) => { customIconSrc?: string; unicodeEmoji?: UnicodeEmoji; };
+const getRoleIconData: GetRoleIconData = findByCodeLazy("convertSurrogateToName", "customIconSrc", "unicodeEmoji");
+
+function getRoleIconSrc(role: Role) {
+    const icon = getRoleIconData(role, 20);
+    if (!icon) return;
+
+    const { customIconSrc, unicodeEmoji } = icon;
+    return customIconSrc ?? unicodeEmoji?.url;
 }
 
 function PermissionItem({ permissionName, permissionValue, overwriteValue, ...props }: {
@@ -123,32 +125,34 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
             size={ModalSize.LARGE}
         >
             <ModalHeader>
-                <Text className={cl("perms-title")} variant="heading-lg/semibold">{header} permissions:</Text>
+                <Text className={cl("modal-title")} variant="heading-lg/semibold">{header} permissions:</Text>
                 <ModalCloseButton onClick={modalProps.onClose} />
             </ModalHeader>
 
-            <ModalContent>
+            <ModalContent className={cl("modal-content")}>
                 {!selectedItem && (
-                    <div className={cl("perms-no-perms")}>
+                    <div className={cl("modal-no-perms")}>
                         <Text variant="heading-lg/normal">No permissions to display!</Text>
                     </div>
                 )}
 
                 {selectedItem && (
-                    <div className={cl("perms-container")}>
-                        <ScrollerThin className={cl("perms-list")}>
+                    <div className={cl("modal-container")}>
+                        <ScrollerThin className={cl("modal-list")} orientation="auto">
                             {permissions.map((permission, index) => {
-                                const user = permission.type === PermissionType.User ? UserStore.getUser(permission.id ?? "") : undefined;
-                                const role = permission.type === PermissionType.Role ? roles[permission.id ?? ""] : undefined;
+                                const user: User | undefined = UserStore.getUser(permission.id ?? "");
+                                const role: Role | undefined = roles[permission.id ?? ""];
+                                const roleIconSrc = role != null ? getRoleIconSrc(role) : undefined;
 
                                 return (
-                                    <button
-                                        key={role?.id ?? user?.id ?? (permission.type === PermissionType.Owner ? "@owner" : undefined)}
-                                        className={cl("perms-list-item-btn")}
+                                    <div
+                                        className={cl("modal-list-item-btn")}
                                         onClick={() => selectItem(index)}
+                                        role="button"
+                                        tabIndex={0}
                                     >
                                         <div
-                                            className={cl("perms-list-item", { "perms-list-item-active": selectedItemIndex === index })}
+                                            className={cl("modal-list-item", { "modal-list-item-active": selectedItemIndex === index })}
                                             onContextMenu={e => {
                                                 if (permission.type === PermissionType.Role)
                                                     ContextMenuApi.openContextMenu(e, () => (
@@ -162,7 +166,6 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
                                                     ContextMenuApi.openContextMenu(e, () => (
                                                         <UserContextMenu
                                                             userId={permission.id!}
-                                                            onClose={modalProps.onClose}
                                                         />
                                                     ));
                                                 }
@@ -170,72 +173,76 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
                                         >
                                             {(permission.type === PermissionType.Role || permission.type === PermissionType.Owner) && (
                                                 <span
-                                                    className={cl("perms-role-circle")}
+                                                    className={cl("modal-role-circle")}
                                                     style={{ backgroundColor: role?.colorString ?? "var(--primary-300)" }}
                                                 />
                                             )}
-                                            {user !== undefined && (
+                                            {permission.type === PermissionType.Role && roleIconSrc != null && (
                                                 <img
-                                                    className={cl("perms-user-img")}
-                                                    src={user.getAvatarURL(void 0, void 0, false)}
+                                                    className={cl("modal-role-image")}
+                                                    src={roleIconSrc}
                                                 />
-                                            )}
+                                            )
+                                            }
+                                            {
+                                                permission.type === PermissionType.User && user != null && (
+                                                    <img
+                                                        className={cl("modal-user-img")}
+                                                        src={user.getAvatarURL(void 0, void 0, false)}
+                                                    />
+                                                )
+                                            }
                                             <Text variant="text-md/normal">
                                                 {
                                                     permission.type === PermissionType.Role
                                                         ? role?.name ?? "Unknown Role"
                                                         : permission.type === PermissionType.User
-                                                            ? (user !== undefined && getUniqueUsername(user)) ?? "Unknown User"
+                                                            ? (user != null && getUniqueUsername(user)) ?? "Unknown User"
                                                             : (
                                                                 <Flex style={{ gap: "0.2em", justifyItems: "center" }}>
                                                                     @owner
-                                                                    <OwnerCrownIcon
-                                                                        height={18}
-                                                                        width={18}
-                                                                        aria-hidden="true"
-                                                                    />
+                                                                    <OwnerCrownIcon height={18} width={18} aria-hidden="true" />
                                                                 </Flex>
                                                             )
                                                 }
                                             </Text>
-                                        </div>
-                                    </button>
+                                        </div >
+                                    </div >
                                 );
                             })}
-                        </ScrollerThin>
-                        <ScrollerThin className={cl(
-                            "perms-perms",
-                            irrelevantPermissionsHidden ? "perms-perms-hide-irrelevant-permissions" : undefined
-                        )}>
-                            <div className={cl("perms-perms-settings")}>
-                                <Switch className={cl("perms-perms-settings-setting")}
-                                    key="vc-permviewer-hide-irrelevant-permissions"
-                                    value={irrelevantPermissionsHidden}
-                                    onChange={v => setIrrelevantPermissionsHidden(v)}
-                                    hideBorder={true}
-                                >Hide irrelevant permissions</Switch>
-                            </div>
-                            <div className={cl("perms-perms-items")}>
-                                {Object.entries(PermissionsBits).map(([permissionName, permissionBit]) => {
-                                    const { overwriteAllow, overwriteDeny, permissions } = selectedItem;
-                                    const permissionValue = getPermissionValue(permissionBit, permissions);
-                                    const overwriteValue = getOverwriteValue(permissionBit, overwriteAllow, overwriteDeny);
+                        </ScrollerThin >
+                        <div className={cl("modal-divider")} />
+                        <ScrollerThin className={cl("modal-perms")} orientation="auto">
+                            {Object.entries(PermissionsBits).map(([permissionName, bit]) => (
+                                <div className={cl("modal-perms-item")}>
+                                    <div className={cl("modal-perms-item-icon")}>
+                                        {(() => {
+                                            const { permissions, overwriteAllow, overwriteDeny } = selectedItem;
 
-                                    return irrelevantPermissionsHidden && !isPermissionValueRelevant(permissionValue) && !isOverwriteValueRelevant(overwriteValue)
-                                        ? <Fragment key={permissionName} />
-                                        : <Fragment key={permissionName}>
-                                            <PermissionItem className={cl("perms-perms-items-item")}
-                                                permissionName={permissionName}
-                                                permissionValue={permissionValue}
-                                                overwriteValue={overwriteValue}
-                                            />
-                                        </Fragment>;
-                                })}
-                            </div>
+                                            if (permissions)
+                                                return (permissions & bit) === bit
+                                                    ? PermissionAllowedIcon()
+                                                    : PermissionDeniedIcon();
+
+                                            if (overwriteAllow && (overwriteAllow & bit) === bit)
+                                                return PermissionAllowedIcon();
+                                            if (overwriteDeny && (overwriteDeny & bit) === bit)
+                                                return PermissionDeniedIcon();
+
+                                            return PermissionDefaultIcon();
+                                        })()}
+                                    </div>
+                                    <Text variant="text-md/normal">{getPermissionString(permissionName)}</Text>
+
+                                    <Tooltip text={getPermissionDescription(permissionName) || "No Description"}>
+                                        {props => <InfoIcon {...props} />}
+                                    </Tooltip>
+                                </div>
+                            ))}
                         </ScrollerThin>
                     </div>
                 )}
-            </ModalContent>
+            </ModalContent >
         </ModalRoot >
     );
 }
@@ -248,7 +255,7 @@ function RoleContextMenu({ guild, roleId, onClose }: { guild: Guild; roleId: str
             aria-label="Role Options"
         >
             <Menu.MenuItem
-                id="vc-copy-role-id"
+                id={cl("copy-role-id")}
                 label={i18n.Messages.COPY_ID_ROLE}
                 action={() => {
                     Clipboard.copy(roleId);
@@ -257,14 +264,13 @@ function RoleContextMenu({ guild, roleId, onClose }: { guild: Guild; roleId: str
 
             {(settings.store as any).unsafeViewAsRole && (
                 <Menu.MenuItem
-                    id="vc-pw-view-as-role"
+                    id={cl("view-as-role")}
                     label={i18n.Messages.VIEW_AS_ROLE}
                     action={() => {
                         const role = GuildStore.getRole(guild.id, roleId);
                         if (!role) return;
 
                         onClose();
-
                         FluxDispatcher.dispatch({
                             type: "IMPERSONATE_UPDATE",
                             guildId: guild.id,
@@ -275,15 +281,14 @@ function RoleContextMenu({ guild, roleId, onClose }: { guild: Guild; roleId: str
                                 }
                             }
                         });
-                    }
-                    }
+                    }}
                 />
             )}
         </Menu.Menu>
     );
 }
 
-function UserContextMenu({ userId, onClose }: { userId: string; onClose: () => void; }) {
+function UserContextMenu({ userId }: { userId: string; }) {
     return (
         <Menu.Menu
             navId={cl("user-context-menu")}
@@ -291,7 +296,7 @@ function UserContextMenu({ userId, onClose }: { userId: string; onClose: () => v
             aria-label="User Options"
         >
             <Menu.MenuItem
-                id="vc-copy-user-id"
+                id={cl("copy-user-id")}
                 label={i18n.Messages.COPY_ID_USER}
                 action={() => {
                     Clipboard.copy(userId);
@@ -303,4 +308,13 @@ function UserContextMenu({ userId, onClose }: { userId: string; onClose: () => v
 
 const RolesAndUsersPermissions = ErrorBoundary.wrap(RolesAndUsersPermissionsComponent);
 
-export default openRolesAndUsersPermissionsModal;
+export default function openRolesAndUsersPermissionsModal(permissions: Array<RoleOrUserPermission>, guild: Guild, header: string) {
+    return openModal(modalProps => (
+        <RolesAndUsersPermissions
+            modalProps={modalProps}
+            permissions={permissions}
+            guild={guild}
+            header={header}
+        />
+    ));
+}
