@@ -29,7 +29,7 @@ import type { Guild, Role, User } from "discord-types/general";
 
 import { settings } from "..";
 import { cl, getComputedPermissionValue, getOverwriteValue, getPermissionDescription, getPermissionString, getPermissionString as getPermissionTitle, getPermissionValue, isOverwriteValueRelevant, isPermissionValueRelevant } from "../utils";
-import { PermissionAllowedIcon, PermissionDeniedIcon, PermissionIcon } from "./icons";
+import { PermissionAllowedIcon, PermissionDeniedIcon, PermissionPassthroughIcon, PermissionIcon } from "./icons";
 
 export const enum PermissionType {
     Role = 0,
@@ -221,15 +221,15 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
 
                                             if (permissions)
                                                 return (permissions & bit) === bit
-                                                    ? PermissionAllowedIcon()
-                                                    : PermissionDeniedIcon();
+                                                    ? PermissionAllowedIcon({})
+                                                    : PermissionDeniedIcon({});
 
                                             if (overwriteAllow && (overwriteAllow & bit) === bit)
-                                                return PermissionAllowedIcon();
+                                                return PermissionAllowedIcon({});
                                             if (overwriteDeny && (overwriteDeny & bit) === bit)
-                                                return PermissionDeniedIcon();
+                                                return PermissionDeniedIcon({});
 
-                                            return PermissionDefaultIcon();
+                                            return PermissionPassthroughIcon({});
                                         })()}
                                     </div>
                                     <Text variant="text-md/normal">{getPermissionString(permissionName)}</Text>
