@@ -20,28 +20,20 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { Flex } from "@components/Flex";
 import { InfoIcon, OwnerCrownIcon } from "@components/Icons";
 import { getIntlMessage, getUniqueUsername } from "@utils/discord";
-import { classes } from "@utils/misc";
 import { ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
 import { findByCodeLazy } from "@webpack";
-import { Clipboard, ContextMenuApi, FluxDispatcher, Fragment, GuildMemberStore, GuildStore, i18n, Menu, PermissionsBits, ScrollerThin, Switch, Text, Tooltip, useEffect, useMemo, UserStore, useState, useStateFromStores } from "@webpack/common";
+import { Clipboard, ContextMenuApi, FluxDispatcher, GuildMemberStore, GuildStore, i18n, Menu, PermissionsBits, ScrollerThin, Text, Tooltip, useEffect, useMemo, UserStore, useState, useStateFromStores } from "@webpack/common";
 import { UnicodeEmoji } from "@webpack/types";
 import type { Guild, Role, User } from "discord-types/general";
 
-import { PermissionAllowedIcon, PermissionDeniedIcon, PermissionIcon, PermissionPassthroughIcon } from "./icons";
-
 import { settings } from "..";
-import { cl, getComputedPermissionValue, getOverwriteValue, getPermissionValue, isOverwriteValueRelevant, isPermissionValueRelevant } from "../utils";
+import { cl, getGuildPermissionSpecMap } from "../utils";
+import { PermissionAllowedIcon, PermissionDefaultIcon, PermissionDeniedIcon } from "./icons";
 
 export const enum PermissionType {
     Role = 0,
     User = 1,
     Owner = 2
-}
-
-export const enum PermissionValue {
-    Deny = "DENY",
-    Passthrough = "PASSTHROUGH",
-    Allow = "ALLOW",
 }
 
 export interface RoleOrUserPermission {
@@ -63,35 +55,8 @@ function getRoleIconSrc(role: Role) {
     return customIconSrc ?? unicodeEmoji?.url;
 }
 
-function PermissionItem({ permissionName, permissionValue, overwriteValue, ...props }: {
-    permissionName: string,
-    permissionValue?: PermissionValue,
-    overwriteValue?: PermissionValue,
-} & React.HTMLAttributes<any>) {
-    const computedPermissionValue = getComputedPermissionValue(overwriteValue, permissionValue);
-
-    return (<div {...props}
-        className={classes(props.className, cl(
-            "perm-item",
-            !isPermissionValueRelevant(permissionValue) && !isOverwriteValueRelevant(overwriteValue) ? "perm-is-irrelevant" : undefined,
-        ))}
-        data-vc-permviewer-perm-name={permissionName}
-        data-vc-permviewer-perm-value={permissionValue}
-        data-vc-permviewer-perm-overwrite-value={overwriteValue}
-    >
-        <PermissionIcon className={cl("perm-item-icon")}
-            permissionValue={computedPermissionValue ?? PermissionValue.Passthrough}
-        />
-        <Text className={cl("perm-item-title")} variant="text-md/normal">{permissionName}</Text>
-
-        <Tooltip text={permissionName || "No Description"}>{props => (
-            <InfoIcon {...props} className={cl("perm-item-info")} />
-        )}</Tooltip>
-    </div>);
-}
-
 function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, header }: { permissions: Array<RoleOrUserPermission>; guild: Guild; modalProps: ModalProps; header: string; }) {
-    const guildPermissionSpecMap = useMemo(() => guildPermissionSpecMap(guild), [guild.id]);
+    const guildPermissionSpecMap = useMemo(() => getGuildPermissionSpecMap(guild), [guild.id]);
 
     useStateFromStores(
         [GuildMemberStore],
@@ -119,9 +84,6 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
     const [selectedItemIndex, selectItem] = useState(0);
     const selectedItem = permissions[selectedItemIndex];
 
-    const [irrelevantPermissionsHidden, setIrrelevantPermissionsHidden] =
-        useState(settings.store.irrelevantPermissionsHiddenByDefault);
-
     const roles = GuildStore.getRoles(guild.id);
 
     return (
@@ -142,16 +104,16 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
                 )}
 
                 {selectedItem && (
-                    <div className={cl("perms-container")}>
-                        <ScrollerThin className={cl("perms-list")}>
+                    <div className={cl("modal-container")}>
+                        <ScrollerThin className={cl("modal-list")} orientation="auto">
                             {permissions.map((permission, index) => {
-                                const user = permission.type === PermissionType.User ? UserStore.getUser(permission.id ?? "") : undefined;
-                                const role = permission.type === PermissionType.Role ? roles[permission.id ?? ""] : undefined;
+                                const user: User | undefined = UserStore.getUser(permission.id ?? "");
+                                const role: Role | undefined = roles[permission.id ?? ""];
+                                const roleIconSrc = role != null ? getRoleIconSrc(role) : undefined;
 
                                 return (
-                                    <button
-                                        key={role?.id ?? user?.id ?? (permission.type === PermissionType.Owner ? "@owner" : undefined)}
-                                        className={cl("perms-list-item-btn")}
+                                    <div
+                                        className={cl("modal-list-item-btn")}
                                         onClick={() => selectItem(index)}
                                         role="button"
                                         tabIndex={0}
@@ -182,27 +144,24 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
                                                     style={{ backgroundColor: role?.colorString ?? "var(--primary-300)" }}
                                                 />
                                             )}
-                                            {user !== undefined && (
+                                            {permission.type === PermissionType.Role && roleIconSrc != null && (
                                                 <img
                                                     className={cl("modal-role-image")}
-                                                    src={getRoleIconSrc(role!)}
+                                                    src={roleIconSrc}
                                                 />
-                                            )
-                                            }
-                                            {
-                                                permission.type === PermissionType.User && user != null && (
-                                                    <img
-                                                        className={cl("modal-user-img")}
-                                                        src={user.getAvatarURL(void 0, void 0, false)}
-                                                    />
-                                                )
-                                            }
+                                            )}
+                                            {permission.type === PermissionType.User && user != null && (
+                                                <img
+                                                    className={cl("modal-user-img")}
+                                                    src={user.getAvatarURL(void 0, void 0, false)}
+                                                />
+                                            )}
                                             <Text variant="text-md/normal">
                                                 {
                                                     permission.type === PermissionType.Role
                                                         ? role?.name ?? "Unknown Role"
                                                         : permission.type === PermissionType.User
-                                                            ? (user !== undefined && getUniqueUsername(user)) ?? "Unknown User"
+                                                            ? (user != null && getUniqueUsername(user)) ?? "Unknown User"
                                                             : (
                                                                 <Flex style={{ gap: "0.2em", justifyItems: "center" }}>
                                                                     @owner
@@ -211,45 +170,49 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
                                                             )
                                                 }
                                             </Text>
-                                        </div >
-                                    </button>
+                                        </div>
+                                    </div>
                                 );
                             })}
                         </ScrollerThin>
-                        <ScrollerThin className={cl(
-                            "perms-perms",
-                            irrelevantPermissionsHidden ? "perms-perms-hide-irrelevant-permissions" : undefined
-                        )}>
-                            <div className={cl("perms-perms-settings")}>
-                                <Switch className={cl("perms-perms-settings-setting")}
-                                    key="vc-permviewer-hide-irrelevant-permissions"
-                                    value={irrelevantPermissionsHidden}
-                                    onChange={v => setIrrelevantPermissionsHidden(v)}
-                                    hideBorder={true}
-                                >Hide irrelevant permissions</Switch>
-                            </div>
-                            <div className={cl("perms-perms-items")}>
-                                {Object.entries(PermissionsBits).map(([permissionName, permissionBit]) => {
-                                    const { overwriteAllow, overwriteDeny, permissions } = selectedItem;
-                                    const permissionValue = getPermissionValue(permissionBit, permissions);
-                                    const overwriteValue = getOverwriteValue(permissionBit, overwriteAllow, overwriteDeny);
+                        <div className={cl("modal-divider")} />
+                        <ScrollerThin className={cl("modal-perms")} orientation="auto">
+                            {Object.values(PermissionsBits).map(bit => (
+                                <div className={cl("modal-perms-item")}>
+                                    <div className={cl("modal-perms-item-icon")}>
+                                        {(() => {
+                                            const { permissions, overwriteAllow, overwriteDeny } = selectedItem;
 
-                                    return irrelevantPermissionsHidden && !isPermissionValueRelevant(permissionValue) && !isOverwriteValueRelevant(overwriteValue)
-                                        ? <Fragment key={permissionName} />
-                                        : <Fragment key={permissionName}>
-                                            <PermissionItem className={cl("perms-perms-items-item")}
-                                                permissionName={permissionName}
-                                                permissionValue={permissionValue}
-                                                overwriteValue={overwriteValue}
-                                            />
-                                        </Fragment>;
-                                })}
-                            </div>
+                                            if (permissions)
+                                                return (permissions & bit) === bit
+                                                    ? PermissionAllowedIcon()
+                                                    : PermissionDeniedIcon();
+
+                                            if (overwriteAllow && (overwriteAllow & bit) === bit)
+                                                return PermissionAllowedIcon();
+                                            if (overwriteDeny && (overwriteDeny & bit) === bit)
+                                                return PermissionDeniedIcon();
+
+                                            return PermissionDefaultIcon();
+                                        })()}
+                                    </div>
+                                    <Text variant="text-md/normal">{guildPermissionSpecMap[String(bit)].title}</Text>
+
+                                    <Tooltip text={
+                                        (() => {
+                                            const { description } = guildPermissionSpecMap[String(bit)];
+                                            return typeof description === "function" ? i18n.intl.format(description, {}) : description;
+                                        })()
+                                    }>
+                                        {props => <InfoIcon {...props} />}
+                                    </Tooltip>
+                                </div>
+                            ))}
                         </ScrollerThin>
                     </div>
                 )}
-            </ModalContent >
-        </ModalRoot >
+            </ModalContent>
+        </ModalRoot>
     );
 }
 

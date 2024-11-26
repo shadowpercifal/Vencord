@@ -16,11 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { PermissionValue } from "./RolesAndUsersPermissions";
-
-export function PermissionDeniedIcon({ ...props }: {} & React.SVGProps<SVGSVGElement>) {
+export function PermissionDeniedIcon() {
     return (
-        <svg {...props}
+        <svg
             height="24"
             width="24"
             viewBox="0 0 24 24"
@@ -31,24 +29,9 @@ export function PermissionDeniedIcon({ ...props }: {} & React.SVGProps<SVGSVGEle
     );
 }
 
-export function PermissionPassthroughIcon({ ...props }: {} & React.SVGProps<SVGSVGElement>) {
+export function PermissionAllowedIcon() {
     return (
-        <svg {...props}
-            height="24"
-            width="24"
-            viewBox="0 0 16 16"
-        >
-            <g>
-                <title>Not overwritten</title>
-                <polygon fill="var(--text-normal)" points="12 2.32 10.513 2 4 13.68 5.487 14" />
-            </g>
-        </svg>
-    );
-}
-
-export function PermissionAllowedIcon({ ...props }: {} & React.SVGProps<SVGSVGElement>) {
-    return (
-        <svg {...props}
+        <svg
             height="24"
             width="24"
             viewBox="0 0 24 24"
@@ -59,10 +42,17 @@ export function PermissionAllowedIcon({ ...props }: {} & React.SVGProps<SVGSVGEl
     );
 }
 
-export function PermissionIcon({ permissionValue, ...props }: { permissionValue: PermissionValue; } & React.SVGProps<SVGSVGElement>) {
-    switch (permissionValue) {
-        case PermissionValue.Deny: return PermissionDeniedIcon(props);
-        case PermissionValue.Allow: return PermissionAllowedIcon(props);
-        case PermissionValue.Passthrough: return PermissionPassthroughIcon(props);
-    }
+export function PermissionDefaultIcon() {
+    return (
+        <svg
+            height="24"
+            width="24"
+            viewBox="0 0 16 16"
+        >
+            <g>
+                <title>Not overwritten</title>
+                <polygon fill="var(--text-normal)" points="12 2.32 10.513 2 4 13.68 5.487 14" />
+            </g>
+        </svg>
+    );
 }
