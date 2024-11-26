@@ -146,10 +146,7 @@
     display: none;
 }
 
-.vc-permviewer-perm-item-icon {
-    grid-column: vc-permviewer-perm-item-icon;
-    grid-row: vc-permviewer-perm-item-icon;
-}
+
 
 .vc-permviewer-modal-perms-item {
     display: flex;
@@ -164,6 +161,17 @@
 }
 
 .vc-permviewer-modal-perms-item-icon {
+    align-items: center;
+    padding: var(--vc-permviewer-perm-item-row-gap) var(--vc-permviewer-perm-item-column-gap);
+    border-bottom: var(--vc-permviewer-perm-item-border-width) solid var(--background-modifier-active);
+    grid-template: "vc-permviewer-perm-item-icon vc-permviewer-perm-item-title vc-permviewer-perm-item-info" 1fr / auto 1fr auto;
+    column-gap: var(--vc-permviewer-perm-item-column-gap);
+}
+
+
+.vc-permviewer-perm-item-icon {
+    grid-column: vc-permviewer-perm-item-icon;
+    grid-row: vc-permviewer-perm-item-icon;
     border: 1px solid var(--background-modifier-selected);
     width: 24px;
     height: 24px;
