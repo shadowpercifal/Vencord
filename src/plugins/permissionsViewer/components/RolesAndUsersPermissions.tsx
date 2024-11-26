@@ -19,19 +19,17 @@
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Flex } from "@components/Flex";
 import { InfoIcon, OwnerCrownIcon } from "@components/Icons";
-
-import { classes } from "@utils/misc";
-
 import { getIntlMessage, getUniqueUsername } from "@utils/discord";
+import { classes } from "@utils/misc";
 import { ModalCloseButton, ModalContent, ModalHeader, ModalProps, ModalRoot, ModalSize, openModal } from "@utils/modal";
-import { Clipboard, ContextMenuApi, FluxDispatcher, Fragment, GuildMemberStore, GuildStore, i18n, Menu, PermissionsBits, ScrollerThin, Switch, Text, Tooltip, useEffect, UserStore, useState, useStateFromStores } from "@webpack/common";
 import { findByCodeLazy } from "@webpack";
+import { Clipboard, ContextMenuApi, FluxDispatcher, GuildMemberStore, GuildStore, i18n, Menu, PermissionsBits, ScrollerThin, Text, Tooltip, useEffect, useMemo, UserStore, useState, useStateFromStores } from "@webpack/common";
 import { UnicodeEmoji } from "@webpack/types";
 import type { Guild, Role, User } from "discord-types/general";
 
 import { settings } from "..";
-import { cl, getComputedPermissionValue, getOverwriteValue, getPermissionDescription, getPermissionString, getPermissionString as getPermissionTitle, getPermissionValue, isOverwriteValueRelevant, isPermissionValueRelevant } from "../utils";
-import { PermissionAllowedIcon, PermissionDeniedIcon, PermissionPassthroughIcon, PermissionIcon } from "./icons";
+import { cl, getComputedPermissionValue, isOverwriteValueRelevant, isPermissionValueRelevant } from "../utils";
+import { PermissionAllowedIcon, PermissionDeniedIcon, PermissionIcon, PermissionPassthroughIcon } from "./icons";
 
 export const enum PermissionType {
     Role = 0,
@@ -83,16 +81,16 @@ function PermissionItem({ permissionName, permissionValue, overwriteValue, ...pr
         <PermissionIcon className={cl("perm-item-icon")}
             permissionValue={computedPermissionValue ?? PermissionValue.Passthrough}
         />
-        <Text className={cl("perm-item-title")} variant="text-md/normal">{getPermissionTitle(permissionName)}</Text>
+        <Text className={cl("perm-item-title")} variant="text-md/normal">{permissionName}</Text>
 
-        <Tooltip text={getPermissionDescription(permissionName) || "No Description"}>{props => (
+        <Tooltip text={permissionName || "No Description"}>{props => (
             <InfoIcon {...props} className={cl("perm-item-info")} />
         )}</Tooltip>
     </div>);
 }
 
 function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, header }: { permissions: Array<RoleOrUserPermission>; guild: Guild; modalProps: ModalProps; header: string; }) {
-    permissions.sort((a, b) => a.type - b.type);
+    const guildPermissionSpecMap = useMemo(() => guildPermissionSpecMap(guild), [guild.id]);
 
     useStateFromStores(
         [GuildMemberStore],
@@ -100,6 +98,10 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
         null,
         (old, current) => old.length === current.length
     );
+
+    useEffect(() => {
+        permissions.sort((a, b) => a.type - b.type);
+    }, [permissions]);
 
     useEffect(() => {
         const usersToRequest = permissions
@@ -215,7 +217,7 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
                         </ScrollerThin >
                         <div className={cl("modal-divider")} />
                         <ScrollerThin className={cl("modal-perms")} orientation="auto">
-                            {Object.entries(PermissionsBits).map(([permissionName, bit]) => (
+                            {Object.values(PermissionsBits).map(bit => (
                                 <div className={cl("modal-perms-item")}>
                                     <div className={cl("modal-perms-item-icon")}>
                                         {(() => {
@@ -234,9 +236,14 @@ function RolesAndUsersPermissionsComponent({ permissions, guild, modalProps, hea
                                             return PermissionPassthroughIcon({});
                                         })()}
                                     </div>
-                                    <Text variant="text-md/normal">{getPermissionString(permissionName)}</Text>
+                                    <Text variant="text-md/normal">{guildPermissionSpecMap[String(bit)].title}</Text>
 
-                                    <Tooltip text={getPermissionDescription(permissionName) || "No Description"}>
+                                    <Tooltip text={
+                                        (() => {
+                                            const { description } = guildPermissionSpecMap[String(bit)];
+                                            return typeof description === "function" ? i18n.intl.format(description, {}) : description;
+                                        })()
+                                    }>
                                         {props => <InfoIcon {...props} />}
                                     </Tooltip>
                                 </div>
