@@ -201,9 +201,10 @@ export default definePlugin({
     ), { noop: true }),
 
     contextMenus: {
-        "user-context": makeContextMenuPatch("roles", MenuItemParentType.User),
-        "channel-context": makeContextMenuPatch(["mute-channel", "unmute-channel"], MenuItemParentType.Channel),
-        "guild-context": makeContextMenuPatch("privacy", MenuItemParentType.Guild),
-        "guild-header-popout": makeContextMenuPatch("privacy", MenuItemParentType.Guild)
+        "user-context": makeContextMenuPatch("user-profile", MenuItemParentType.User),
+        "channel-context": makeContextMenuPatch("mark-channel-read", MenuItemParentType.Channel),
+        "guild-context": makeContextMenuPatch("mark-guild-read", MenuItemParentType.Guild),
+        "guild-header-popout": makeContextMenuPatch("mark-guild-read", MenuItemParentType.Guild)
+
     }
 });
