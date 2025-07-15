@@ -16,11 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-<<<<<<< HEAD
 import { canonicalizeMatch } from "@utils/patches";
-=======
 import type * as t from "@vencord/discord-types";
->>>>>>> vencord-main
 import { _resolveReady, filters, findByCodeLazy, findByPropsLazy, findLazy, mapMangledModuleLazy, waitFor } from "@webpack";
 
 export let FluxDispatcher: t.FluxDispatcher;
