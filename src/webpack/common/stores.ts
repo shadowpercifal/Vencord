@@ -38,7 +38,6 @@ export let PresenceStore: GenericStore;
 
 export let GuildStore: t.GuildStore;
 export let GuildRoleStore: t.GuildRoleStore;
-export let TypingStore: GenericStore;
 export let GuildMemberStore: t.GuildMemberStore;
 export let UserStore: t.UserStore;
 export let AuthenticationStore: t.AuthenticationStore;
