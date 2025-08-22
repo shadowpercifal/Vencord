@@ -136,7 +136,7 @@ export default definePlugin({
         const html = element.innerHTML;
 
         // Replace instances of ":3" with styled spans
-        const newHtml = html.replace(/:3$/g, ' <span class="vc-cat-pink">:3</span>');
+        const newHtml = html.replace(/ ?:3(?!\S)/g, ' <span class="vc-cat-pink">:3</span>');
 
         // Only update if there was a change
         if (newHtml !== html) {
