@@ -60,10 +60,6 @@ export const useDrag = findByCodeLazy("useDrag::spec.begin was deprecated");
 // you cant make a better finder i love that they remove display names sm
 export const useDrop = findByCodeLazy(".options);return", ".collect,");
 
-export const useDrag = findByCodeLazy("useDrag::spec.begin was deprecated");
-// you cant make a better finder i love that they remove display names sm
-export const useDrop = findByCodeLazy(".options);return", ".collect,");
-
 export const i18n = mapMangledModuleLazy(['defaultLocale:"en-US"', /initialLocale:\i/], {
     t: m => m?.[Symbol.toStringTag] === "IntlMessagesProxy",
     intl: m => m != null && Object.getPrototypeOf(m)?.withFormatters != null
