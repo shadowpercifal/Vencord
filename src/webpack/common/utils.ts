@@ -60,7 +60,11 @@ export const useDrag = findByCodeLazy("useDrag::spec.begin was deprecated");
 // you cant make a better finder i love that they remove display names sm
 export const useDrop = findByCodeLazy(".options);return", ".collect,");
 
-export const i18n = mapMangledModuleLazy('defaultLocale:"en-US"', {
+export const useDrag = findByCodeLazy("useDrag::spec.begin was deprecated");
+// you cant make a better finder i love that they remove display names sm
+export const useDrop = findByCodeLazy(".options);return", ".collect,");
+
+export const i18n = mapMangledModuleLazy(['defaultLocale:"en-US"', /initialLocale:\i/], {
     t: m => m?.[Symbol.toStringTag] === "IntlMessagesProxy",
     intl: m => m != null && Object.getPrototypeOf(m)?.withFormatters != null
 }, true);
@@ -143,7 +147,7 @@ export const UserUtils = {
 
 export const UploadManager = findByPropsLazy("clearAll", "addFile");
 export const UploadHandler = {
-    promptToUpload: findByCodeLazy("=!0,showLargeMessageDialog:") as (files: File[], channel: t.Channel, draftType: Number) => void
+    promptToUpload: findByCodeLazy("Unexpected mismatch between files and file metadata") as (files: File[], channel: t.Channel, draftType: Number) => void
 };
 
 export const ApplicationAssetUtils = mapMangledModuleLazy("getAssetImage: size must === [", {
