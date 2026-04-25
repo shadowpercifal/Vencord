@@ -258,14 +258,14 @@ export default definePlugin({
             ]
         },
         {
-            find: "THREAD_STARTER_MESSAGE?null===",
+            find: ".PREMIUM_REFERRAL&&(",
             replacement: {
                 match: / deleted:\i\.deleted, editHistory:\i\.editHistory,/,
                 replace: "deleted:$self.getDeleted(...arguments), editHistory:$self.getEdited(...arguments),"
             }
         },
         {
-            find: ".controlButtonWrapper,",
+            find: /toolbar:\i,mobileToolbar:\i/,
             predicate: () => settings.store.ShowLogsButton,
             replacement: {
                 match: /(function \i\(\i\){)(.{1,200}toolbar.{1,100}mobileToolbar)/,
@@ -274,11 +274,12 @@ export default definePlugin({
         },
 
         // https://regex101.com/r/JD9Qav/1
+        // MessagePreview component in LogsModal
         {
             find: "=!0,disableInteraction:",
             replacement: {
-                match: /(cozyMessage.{1,50},)childrenHeader:/,
-                replace: "$1childrenAccessories:arguments[0].childrenAccessories || null,childrenHeader:"
+                match: /childrenHeader:.{0,100}childrenMessageContent/,
+                replace: "childrenAccessories:arguments[0].childrenAccessories || null,$&"
             }
         },
 
