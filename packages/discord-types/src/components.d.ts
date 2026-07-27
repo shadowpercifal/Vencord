@@ -546,3 +546,10 @@ export type ColorPicker = ComponentType<{
     label?: ReactNode;
     onChange(value: number | null): void;
 }>;
+
+export type RoleMemberPopout = ComponentType<{
+    popoutProps: PopoutProps;
+    guildId: string;
+    channelId: string;
+    roleId: string;
+}>;
